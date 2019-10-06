@@ -1,0 +1,3 @@
+# MNIST_1Layer
+
+* IDE: VS 2015
