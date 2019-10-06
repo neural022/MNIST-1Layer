@@ -1,0 +1,4 @@
+﻿  MNIST_CV.cpp
+c:\users\asuna\desktop\mnist_1layer\mnist_cv\mnist_cv\mnist_cv.cpp(135): warning C4715: 'MNIST::getLabel': 不是所有控制路徑都傳回值
+  MNIST_CV.vcxproj -> C:\Users\Asuna\Desktop\MNIST_1Layer\MNIST_CV\Debug\MNIST_CV.exe
+  MNIST_CV.vcxproj -> C:\Users\Asuna\Desktop\MNIST_1Layer\MNIST_CV\Debug\MNIST_CV.pdb (Full PDB)
