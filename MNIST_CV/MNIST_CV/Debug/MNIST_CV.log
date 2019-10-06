@@ -1,4 +1,5 @@
 ﻿  MNIST_CV.cpp
-c:\users\asuna\desktop\mnist_1layer\mnist_cv\mnist_cv\mnist_cv.cpp(135): warning C4715: 'MNIST::getLabel': 不是所有控制路徑都傳回值
-  MNIST_CV.vcxproj -> C:\Users\Asuna\Desktop\MNIST_1Layer\MNIST_CV\Debug\MNIST_CV.exe
-  MNIST_CV.vcxproj -> C:\Users\Asuna\Desktop\MNIST_1Layer\MNIST_CV\Debug\MNIST_CV.pdb (Full PDB)
+d:\code\visual studio 2015 project\mnist_cv\mnist_cv\mnist_cv.cpp(154): warning C4244: '引數': 將 'time_t' 轉換為 'unsigned int'，由於類型不同，可能導致資料遺失
+d:\code\visual studio 2015 project\mnist_cv\mnist_cv\mnist_cv.cpp(110): warning C4715: 'MNIST::getLabel': 不是所有控制路徑都傳回值
+  MNIST_CV.vcxproj -> D:\code\Visual Studio 2015 Project\MNIST_CV\Debug\MNIST_CV.exe
+  MNIST_CV.vcxproj -> D:\code\Visual Studio 2015 Project\MNIST_CV\Debug\MNIST_CV.pdb (Full PDB)

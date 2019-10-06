@@ -6,121 +6,96 @@
 #include "stdio.h"
 #include "math.h"
 #include "time.h"
+#include "Neuron.h"
 
 #define TRAIN_NUM 60000
 #define TEST_NUM 10000
-#define PIXEL 784
 #define NUMBER_NUM 10
-#define LEARNING_RATE 0.001
-
-class Neuron
-{
-	public:
-		double x[PIXEL];
-		double w[PIXEL];
-		double y;
-
-		Neuron() 
-		{
-			for (int i = 0; i < PIXEL; i++) x[i] = w[i] = 0;
-			y = 0;
-		}
-		~Neuron() {	}
-};
+//	#define LEARNING_RATE 0.01
 
 class MNIST
 {
 	private:
-		char *trainFile;
-		char *trainlabelFile;
-		char *testFile;
-		char *testlabelFile;
-		FILE *trainf;
-		FILE *trainlabelf;
-		FILE *testf;
-		FILE *testlabelf;
+		unsigned char c, s;
+		FILE *trainf, *trainlabelf;
+		FILE *testf, *testlabelf;
 		Neuron neuron[NUMBER_NUM];
 		double yy[NUMBER_NUM];
+		double LEARNING_RATE;
 	public:
-		MNIST(int fNameLength)
+		MNIST(char trainFileName[], char trainlabelFileName[], char testFileName[], char testlabelFileName[])
 		{
-			trainFile = new char[fNameLength];
-			trainlabelFile = new char[fNameLength];
-			testFile = new char[fNameLength];
-			testlabelFile = new char[fNameLength];
+			LEARNING_RATE = 0.5;
+			trainf = fopen(trainFileName, "rb");
+			trainlabelf = fopen(trainlabelFileName, "rb");
+			testf = fopen(testFileName, "rb");
+			testlabelf = fopen(testlabelFileName, "rb");
 		}
 		~MNIST()
 		{
-			delete testFile;
-			delete testlabelFile;
-			delete trainlabelFile;
-			delete trainFile;
+			fclose(trainlabelf);
+			fclose(trainf);
+			fclose(testlabelf);
+			fclose(testf);
 		}
 
 		void printImage()
 		{
-			for (int j = 0; j < NUMBER_NUM / NUMBER_NUM; j++)
+			for (int i = 0; i < NUMBER_NUM / NUMBER_NUM; i++)
 			{
-				for (int k = 0; k < PIXEL; k++)
+				for (int j = 0; j < PIXEL; j++)
 				{
-					if (k % 28 == 0) printf("\n");
-					if(this->neuron[j].x[k] != 0) printf("*");
+					if (j % 28 == 0) printf("\n");
+					if(this->neuron[i].x[j] != 0) printf("*");
 					else printf(" ");
 				}
 				printf("\n");
 			}
 		}
 
-		void readImage(char c, FILE *f)
+		void readInfo(unsigned char c, unsigned char s, FILE *f, FILE *g)
 		{
-			for (int j = 0; j < PIXEL; j++)
+			for (int i = 0; i < 16; i++) fscanf(f, "%c", &c);
+			for (int i = 0; i < 8; i++) fscanf(g, "%c", &s);
+		}
+
+		void readData(unsigned char c, unsigned char s, FILE *f, FILE *g)
+		{
+			//	Read Pixel
+			for (int i = 0; i < PIXEL; i++)
 			{
 				double x = 0;
 				fscanf(f, "%c", &c);
 				if ((double)c) x = 1;
-				for (int k = 0; k < NUMBER_NUM; k++) this->neuron[k].x[j] = x;
+				for (int j = 0; j < NUMBER_NUM; j++) this->neuron[j].x[i] = double(c) / 255;
 			}
 			//	printImage();
-		}
-
-		void readLabel(char c, FILE *f)
-		{
-			fscanf(f, "%c", &c);
+			//	Read Label
+			fscanf(g, "%c", &s);
 			for (int i = 0; i < NUMBER_NUM; i++) this->yy[i] = 0;
-			this->yy[(int)c] = 1;
+			this->yy[(int)s] = 1;
 		}
 		
-		double getErr(double yy, double y) { return yy - y; }
-
-		void updateWeights(int n)
-		{
-			for (int i = 0; i < PIXEL; i++) this->neuron[n].w[i] += LEARNING_RATE * this->neuron[n].x[i] * getErr(this->yy[n], this->neuron[n].y);	// *(this->neuron[n].y * (1 - this->neuron[n].y));
-		}
-
 		double sigmoid(double t) { return 1 / (1 + exp(-1.0 * t)); }
 
 		void f(int n, int m)
 		{
 			double sum = 0;
 			for (int i = 0; i < n; i++) sum += this->neuron[m].w[i] * this->neuron[m].x[i];
-			this->neuron[m].y = sigmoid(sum);
+			this->neuron[m].y = sigmoid(sum + this->neuron[m].b);
 		}
 
-		void train()
+		double getErr(double yy, double y) { return yy - y; }
+
+		void updateWeights(int n)
 		{
-			for (int i = 0; i < NUMBER_NUM; i++)
-			{
-				f(PIXEL, i);
-				updateWeights(i);
-			}
+			for (int i = 0; i < PIXEL; i++) this->neuron[n].w[i] += this->LEARNING_RATE * this->neuron[n].x[i] * getErr(this->yy[n], this->neuron[n].y);// *(this->neuron[n].y) * (1 - this->neuron[n].y);
+			this->neuron[n].b += this->LEARNING_RATE * getErr(this->yy[n], this->neuron[n].y);
 		}
-
-		void test() { for (int i = 0; i < NUMBER_NUM; i++) f(PIXEL, i); }
 
 		int predict(Neuron *neuron)
 		{
-			double max = 0;
-			int number = 0;
+			double max = 0;	int number = 0;
 			for (int i = 0; i < NUMBER_NUM; i++)
 			{
 				if (neuron[i].y > max)
@@ -134,64 +109,59 @@ class MNIST
 
 		int getLabel() { for (int i = 0; i < NUMBER_NUM; i++) if (this->yy[i] == 1) return i; }
 
-		void readTrainData(char trainFileName[], char trainlabelFileName[])
+		void printInfo(int *correct, int n)
 		{
-			int correct = 0;
-			char c, s;
-			trainf = fopen(trainFileName, "rb");
-			trainlabelf = fopen(trainlabelFileName, "rb");
-				//	Read Info
-				for (int i = 0; i < 16; i++) fscanf(trainf, "%c", &c);
-				for (int i = 0; i < 8; i++) fscanf(trainlabelf, "%c", &s);
-				//	Read Pixel
-				for (int i = 0; i < TRAIN_NUM; i++)
-				{
-					readImage(c, trainf);
-					readLabel(s, trainlabelf);
-					train();
-					int predict_num = predict(this->neuron);
-					if (predict_num == getLabel()) correct++;
-					//	printf("Predict: %d\tAnswer: %d\n", predict_num, getLabel());
-				}
-				double persentage = (double)(correct) / TRAIN_NUM;
-				printf("accuracy:\t%d%%\n", (int)(persentage * 100));
-			fclose(trainlabelf);
-			fclose(trainf);
+			int predict_num = predict(this->neuron);
+			if (predict_num == getLabel()) (*correct)++;
+			printf("N: %5d\tPredict: %d\tAnswer: %d\t", n + 1, predict_num, getLabel());
+			double persent = (double)(*correct) / (n + 1);
+			printf("current accuracy: %lf\n", persent);
 		}
 
-		void readTestData(char testFileName[], char testlabelFileName[])
+		void train()
 		{
 			int correct = 0;
-			char c, s;
-			testf = fopen(testFileName, "rb");
-			testlabelf = fopen(testlabelFileName, "rb");
-				//	Read Info
-				for (int i = 0; i < 16; i++) fscanf(testf, "%c", &c);
-				for (int i = 0; i < 8; i++) fscanf(testlabelf, "%c", &s);
-				//	Read Pixel
-				for (int i = 0; i < TEST_NUM; i++)
+			readInfo(c, s, trainf, trainlabelf);
+			for (int i = 0; i < TRAIN_NUM; i++)
+			{
+				readData(c, s, trainf, trainlabelf);
+				for (int j = 0; j < NUMBER_NUM; j++)
 				{
-					readImage(c, testf);
-					readLabel(s, testlabelf);
-					test();
-					int predict_num = predict(this->neuron);
-					if (predict_num == getLabel()) correct++;
-					//	printf("Predict: %d\tAnswer: %d\n", predict_num, getLabel());
+					f(PIXEL, j);
+					updateWeights(j);
 				}
-				double persentage = (double)(correct) / TEST_NUM;
-				printf("accuracy:\t%d%%\n", (int)(persentage*100));
-			fclose(testlabelf);
-			fclose(testf);
+				if (i % 15000 == 0) this->LEARNING_RATE /= 5;
+				printInfo(&correct, i);
+			}
+		}
+
+		void test()
+		{
+			int correct = 0;
+			readInfo(c, s, testf, testlabelf);
+			for (int i = 0; i < TEST_NUM; i++)
+			{
+				readData(c, s, testf, testlabelf);
+				for (int j = 0; j < NUMBER_NUM; j++) f(PIXEL, j);
+				if (i % 15000 == 0) this->LEARNING_RATE /= 5;
+				printInfo(&correct, i);
+			}
 		}
 };
 
 int main()
 {
-	MNIST mnist(30);
+	srand(time(NULL)); rand();
+	MNIST mnist("train-images.idx3-ubyte", "train-labels.idx1-ubyte", "t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte");
 	printf("training ...\n");
-	mnist.readTrainData("train-images.idx3-ubyte", "train-labels.idx1-ubyte");
-	printf("\ntesting ...\n");
-	mnist.readTestData("t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte");
+	mnist.train();
+	printf("------------------train ending----------------\n");
+	printf("press enter to testing ...\n");
+	getchar();
+	mnist.test();
+	printf("\ncost execute time: %.2lfseconds\n", (double)clock() / CLOCKS_PER_SEC);
+
+	return 0;
 }
 
 
