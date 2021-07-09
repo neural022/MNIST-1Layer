@@ -1,6 +1,6 @@
 # MNIST-1Layer
 
- --             | N       | Accuarcy ( % )
+ dataset        | N       | Accuarcy ( % )
 :--------------:|:-------:|:----------:|
 train data      | 60000   | 89.07
 test data       | 10000   | 91.39
